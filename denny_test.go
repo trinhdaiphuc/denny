@@ -199,7 +199,7 @@ func TestNaming(t *testing.T) {
 	server.WithRegistry(registryServer)
 
 	// start server in dual mode
-	go server.GraceFulStart("0.0.0.0:8081")
+	go server.GraceFulStart(":8081")
 
 	// Run client
 	clientCfg := clientv3.Config{
