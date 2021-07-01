@@ -196,7 +196,7 @@ func TestNaming(t *testing.T) {
 		DialTimeout: 15 * time.Second,
 	}
 	registryServer := etcd.NewWithClientConfig("hello", clientCfgServer)
-	server.WithRegistry(registryServer, true)
+	server.WithRegistry(registryServer, "192.168.1.2")
 
 	// start server in dual mode
 	go server.GraceFulStart(":8081")

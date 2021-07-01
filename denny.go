@@ -54,8 +54,8 @@ type (
 		noMethodHandler HandleFunc
 		grpcServer      *grpc.Server
 		// for naming registry/dicovery
-		registry naming.Registry
-		registryExternalIP bool
+		registry           naming.Registry
+		registryExternalIP string
 	}
 
 	ProtoJsonSerializer func(response interface{}) (interface{}, error)
@@ -127,7 +127,7 @@ func AddProtoJsonResponseSerializer(parserFunc ProtoJsonSerializer) {
 }
 
 // WithRegistry makes Denny discoverable via naming registry
-func (r *Denny) WithRegistry(registry naming.Registry, useExternalIP bool) *Denny {
+func (r *Denny) WithRegistry(registry naming.Registry, useExternalIP string) *Denny {
 	r.registry = registry
 	r.registryExternalIP = useExternalIP
 	return r
@@ -498,16 +498,21 @@ func (r *Denny) GraceFulStart(addrs ...string) error {
 
 		// register service into registered registry
 		if r.registry != nil {
-			if r.registryExternalIP {
-				ip, err = externalIP()
+			if len(r.registryExternalIP) > 0 {
+				if net.ParseIP(r.registryExternalIP) == nil {
+					panic(errors.New("ip address is invalid" + ip))
+				}
+				if err = r.registry.Register(r.registryExternalIP+addr, 5); err != nil {
+					panic(err)
+				}
 			} else {
 				ip, err = localIp()
-			}
-			if err != nil {
-				panic(err)
-			}
-			if err = r.registry.Register(ip+addr, 5); err != nil {
-				panic(err)
+				if err != nil {
+					panic(err)
+				}
+				if err = r.registry.Register(ip+addr, 5); err != nil {
+					panic(err)
+				}
 			}
 		}
 
@@ -620,41 +625,4 @@ func localIp() (string, error) {
 		}
 	}
 	return "", errors.New("cannot lookup local ip address")
-}
-
-func externalIP() (string, error) {
-	ifaces, err := net.Interfaces()
-	if err != nil {
-		return "", err
-	}
-	for _, iface := range ifaces {
-		if iface.Flags&net.FlagUp == 0 {
-			continue // interface down
-		}
-		if iface.Flags&net.FlagLoopback != 0 {
-			continue // loopback interface
-		}
-		addrs, err := iface.Addrs()
-		if err != nil {
-			return "", err
-		}
-		for _, addr := range addrs {
-			var ip net.IP
-			switch v := addr.(type) {
-			case *net.IPNet:
-				ip = v.IP
-			case *net.IPAddr:
-				ip = v.IP
-			}
-			if ip == nil || ip.IsLoopback() {
-				continue
-			}
-			ip = ip.To4()
-			if ip == nil {
-				continue // not an ipv4 address
-			}
-			return ip.String(), nil
-		}
-	}
-	return "", errors.New("are you connected to the network?")
 }
