@@ -55,6 +55,7 @@ type (
 		grpcServer      *grpc.Server
 		// for naming registry/dicovery
 		registry naming.Registry
+		registryExternalIP bool
 	}
 
 	ProtoJsonSerializer func(response interface{}) (interface{}, error)
@@ -126,8 +127,9 @@ func AddProtoJsonResponseSerializer(parserFunc ProtoJsonSerializer) {
 }
 
 // WithRegistry makes Denny discoverable via naming registry
-func (r *Denny) WithRegistry(registry naming.Registry) *Denny {
+func (r *Denny) WithRegistry(registry naming.Registry, useExternalIP bool) *Denny {
 	r.registry = registry
+	r.registryExternalIP = useExternalIP
 	return r
 }
 
@@ -496,7 +498,11 @@ func (r *Denny) GraceFulStart(addrs ...string) error {
 
 		// register service into registered registry
 		if r.registry != nil {
-			ip, err = externalIP()
+			if r.registryExternalIP {
+				ip, err = externalIP()
+			} else {
+				ip, err = localIp()
+			}
 			if err != nil {
 				panic(err)
 			}
