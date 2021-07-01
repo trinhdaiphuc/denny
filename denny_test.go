@@ -190,25 +190,25 @@ func TestNaming(t *testing.T) {
 
 	// RUN
 	clientCfgServer := clientv3.Config{
-		Endpoints:   strings.Split("58.84.1.31:2379", ";"),
+		Endpoints:   strings.Split("0.0.0.0:2379", ";"),
 		Username:    "root",
 		Password:    "phuc12345",
 		DialTimeout: 15 * time.Second,
 	}
-	registryServer := etcd.NewWithClientConfig("bevo.profile", clientCfgServer)
+	registryServer := etcd.NewWithClientConfig("hello", clientCfgServer)
 	server.WithRegistry(registryServer)
 
 	// start server in dual mode
-	go server.GraceFulStart(":8081")
+	go server.GraceFulStart("0.0.0.0:8081")
 
 	// Run client
 	clientCfg := clientv3.Config{
-		Endpoints:   strings.Split("58.84.1.31:2379", ";"),
+		Endpoints:   strings.Split("0.0.0.0:2379", ";"),
 		Username:    "root",
 		Password:    "phuc12345",
 		DialTimeout: 15 * time.Second,
 	}
-	registry := etcd.NewResolverWithClientConfig("bevo.profile", clientCfg)
+	registry := etcd.NewResolverWithClientConfig("hello", clientCfg)
 	conn, err := grpcClient.Dial(registry.SvcName(), naming.DefaultBalancePolicy(), grpcClient.WithInsecure())
 	if err != nil {
 		panic(err)

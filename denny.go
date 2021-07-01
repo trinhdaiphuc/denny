@@ -496,12 +496,18 @@ func (r *Denny) GraceFulStart(addrs ...string) error {
 
 		// register service into registered registry
 		if r.registry != nil {
-			ip, err = localIp()
-			if err != nil {
-				panic(err)
-			}
-			if err = r.registry.Register(ip+addr, 5); err != nil {
-				panic(err)
+			if len(strings.Split(addr, ":")) > 1 {
+				if err = r.registry.Register(addr, 5); err != nil {
+					panic(err)
+				}
+			} else {
+				ip, err = localIp()
+				if err != nil {
+					panic(err)
+				}
+				if err = r.registry.Register(ip+addr, 5); err != nil {
+					panic(err)
+				}
 			}
 		}
 
